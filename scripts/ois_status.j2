@@ -189,7 +189,6 @@ check_transaction_logs () {
     fi
 }
 
-
 check_network_errors () {
     local network_errors=$(tail -20 ${ulog} | grep "COHFPRDOM; network error code 0xc" | wc -l)
 
