@@ -6,11 +6,15 @@
 
 # -- Internal variables -------------------------------------------------------
 
+script_name=$(basename "$0")
+parent_dir="$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )"
+
 today=$(date +%d%m%y)
 txlog_failures=()
 trlog_failures=()
-txlog=/var/log/tuxedo/{{ service_name }}/txlog.${today}
-trlog=/var/log/tuxedo/{{ service_name }}/trlog.${today}
+txlog={{ tuxedo_logs_path }}/${USER}/txlog.${today}
+trlog={{ tuxedo_logs_path }}/${USER}/trlog.${today}
+ulog={{ tuxedo_logs_path }}/${USER}/ULOG.${today}
 
 unit_sleep_interval=20
 
@@ -24,6 +28,13 @@ sqsp_min_count=1
 mncq_min_count=1
 
 # -- General ------------------------------------------------------------------
+
+check_user () {
+    if [[ "$USER" = "root" ]]; then
+        echo "${script_name}: This script should be executed as a Tuxedo service user not root"
+        exit 1
+    fi
+}
 
 create_mail_files () {
     local name=$1
@@ -147,58 +158,59 @@ check_transaction_logs () {
     local start_mins=$1
     local end_mins=$2
 
-    local last_tx=$(tail -1 $txlog)
-
-    local last_tx_hour=$(cut -c1-2 <<< ${last_tx})
-    local last_tx_min=$(cut -c4-5 <<< ${last_tx})
-    local last_tx_mins_total=$(expr ${last_tx_hour} \* 60 + ${last_tx_min})
-
     local current_day=$(date +%a)
     local current_hour=$(date +%H)
     local current_min=$(date +%M)
-    local current_mins_total=$(expr ${current_hour} \* 60 + ${current_min})
+    local current_mins_total=$(( ${current_hour#0} * 60 + ${current_min#0} ))
 
     if [[ ${current_mins_total} -ge ${start_mins} && ${current_mins_total} -le ${end_mins} ]]; then
 
-        local difference=$(expr $current_mins_total \- $last_tx_mins_total)
-
-        if [[ $current_day = "Sat" || $current_day = "Sun" ]]; then
-            gapcheck=150
-        else
-            gapcheck=90
-        fi
-
-        if [[ ! -s $txlog ]]; then
+    if [[ ! -s ${txlog} ]]; then
             append_txlog_mail_file "TXLOG Not written to"
             record_txlog_unit_fail "TXLOG"
-        fi
+        else
+            local last_tx=$(tail -1 $txlog)
+            local last_tx_hour=$(cut -c1-2 <<< ${last_tx})
+            local last_tx_min=$(cut -c4-5 <<< ${last_tx})
+            local last_tx_mins_total=$(( ${last_tx_hour#0} * 60 + ${last_tx_min#0} ))
 
-        if [[ ${difference} -gt ${gapcheck} ]]; then
-            append_txlog_mail_file "txlog not written to for ${difference} mins"
-            record_txlog_unit_fail "TXLOG"
-        fi
+            local difference=$(( ${current_mins_total#0} - ${last_tx_mins_total#0} ))
+
+            if [[ $current_day = "Sat" || $current_day = "Sun" ]]; then
+                gapcheck=150
+            else
+                gapcheck=90
+            fi
+
+            if [[ ${difference} -gt ${gapcheck} ]]; then
+                append_txlog_mail_file "txlog not written to for ${difference} mins"
+                record_txlog_unit_fail "TXLOG"
+            fi
+    fi
     fi
 }
 
 
 check_network_errors () {
-    network_errors=$(tail -20 /var/log/tuxedo/{{ service_name }}/ULOG.${today} | grep "COHFPRDOM; network error code 0xc" | wc -l)
+    network_errors=$(tail -20 ${ulog} | grep "COHFPRDOM; network error code 0xc" | wc -l)
 
     if [[ ${network_errors} -gt 0 ]]; then
         append_txlog_mail_file "ULOG showing COHFPRDOM network error"
         append_txlog_mail_file "Running CABS CLOSE"
-        {{ scripts_path }}/cabsclose >> ${txlog_mail_file}
+
+        ${parent_dir}/cabsclose >> $txlog_mail_file 2>&1
         record_txlog_unit_fail "QSP NETWORK"
     fi
 }
 
 check_cabsord_errors () {
-    cabsord_errors=$(tail -20 /var/log/tuxedo/{{ service_name }}/ULOG.${today} | grep "tpcall to CABS_Ord failed" | wc -l)
+    cabsord_errors=$(tail -20 ${ulog} | grep "tpcall to CABS_Ord failed" | wc -l)
 
     if [[ ${cabsord_errors} -gt 5 ]]; then
         append_txlog_mail_file "ULOG showing tpcall to CABS_Ord failed"
         append_txlog_mail_file "Running CABS CLOSE"
-        {{ scripts_path }}/cabsclose >> ${txlog_mail_file}
+
+        ${parent_dir}/cabsclose >> $txlog_mail_file 2>&1
         record_txlog_unit_fail "QSP CABS_Ord Failure"
     fi
 }
@@ -206,7 +218,7 @@ check_cabsord_errors () {
 check_chips_errors () {
     chips_errors=$(tail -45 ${trlog} | grep "rcode: -1" | wc -l)
 
-    if [[ ${chips_errors} -gt 1 ]]; then
+    if [[ ${chips_errors} -gt 0 ]]; then
         append_trlog_mail_file "trlog showing -1 errors returned from CHIPS. CSI need to be contacted to rectify."
         record_trlog_unit_fail "CHIPS"
     fi
@@ -215,15 +227,20 @@ check_chips_errors () {
 # -- Alerting -----------------------------------------------------------------
 
 send_alert () {
-    local subject=$(uniq $1)
+    local subject=$(echo $1 | sort | uniq)
     local mail_file=$2
-
-    mailx -r $(hostname) -s "WARNING - ${subject}" {% for recipient in alert_recipients %}{{ recipient }} {% endfor %}< ${mail_file}
+    {% if alerts.enabled %}
+    mailx -r $(hostname) -s "WARNING - ${subject}" {% for recipient in alerts.ois_status %}{{ recipient }} {% endfor %}< ${mail_file}
+    {% else %}
+    echo "Alerts disabled; no mail message(s) will be generated"
+    {% endif %}
 }
 
 # -- Entrypoint ---------------------------------------------------------------
 
 main () {
+    check_user
+
     create_mail_files
     check_bbl
     check_orders_servers
@@ -236,14 +253,19 @@ main () {
     check_transaction_logs 425  1140   # Transactions between 07:05 and 19:00
     check_transaction_logs 1140 1440   # Transactions between 19:00 and 00:00
     check_network_errors
+    check_chips_errors
     check_cabsord_errors
 
     if [[ -s ${txlog_mail_file} ]]; then
-        send_alert "OIS Problem - ${txlog_failures[*]}" "${txlog_mail_file}"
+    subject=$(echo ${txlog_failures[@]} | sort | uniq)
+        append_txlog_mail_file ""
+        send_alert "OIS Problem - ${subject}" "${txlog_mail_file}"
     fi
 
     if [[ -s ${trlog_mail_file} ]]; then
-        send_alert "TRLOG Problem - ${trlog_failures[*]}" "${trlog_mail_file}"
+        subject=$(echo ${trlog_failures[@]} | sort | uniq)
+        append_trlog_mail_file ""
+        send_alert "TRLOG Problem - ${trlog_failures}" "${trlog_mail_file}"
     fi
 
     delete_mail_files
