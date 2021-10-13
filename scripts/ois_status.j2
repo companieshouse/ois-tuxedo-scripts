@@ -176,9 +176,9 @@ check_transaction_logs () {
             local difference=$(( ${current_mins_total#0} - ${last_tx_mins_total#0} ))
 
             if [[ ${current_day} = "Sat" || ${current_day} = "Sun" ]]; then
-                no_tx_period_mins=150
+                local no_tx_period_mins=150
             else
-                no_tx_period_mins=90
+                local no_tx_period_mins=90
             fi
 
             if [[ ${difference} -gt ${no_tx_period_mins} ]]; then
