@@ -248,7 +248,7 @@ main () {
     check_queue_servers
     check_sqsp_servers
     check_mncq_servers
-    check_transaction_logs 0    425    # Transactions between 00:00 and 07:05
+    check_transaction_logs 5    425    # Transactions between 00:05 and 07:05
     check_transaction_logs 425  1140   # Transactions between 07:05 and 19:00
     check_transaction_logs 1140 1440   # Transactions between 19:00 and 00:00
     check_network_errors
