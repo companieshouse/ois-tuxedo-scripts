@@ -7,7 +7,7 @@
 # -- Internal variables -------------------------------------------------------
 
 script_name=$(basename "$0")
-parent_dir="$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )"
+parent_dir="$(cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd)"
 
 today=$(date +%d%m%y)
 txlog_failures=()
@@ -30,7 +30,7 @@ mncq_min_count=1
 # -- General ------------------------------------------------------------------
 
 check_user () {
-    if [[ "$USER" = "root" ]]; then
+    if [[ "-u ${USER}" = "root" ]]; then
         echo "${script_name}: This script should be executed as a Tuxedo service user not root"
         exit 1
     fi
@@ -176,13 +176,13 @@ check_transaction_logs () {
 
             local difference=$(( ${current_mins_total#0} - ${last_tx_mins_total#0} ))
 
-            if [[ $current_day = "Sat" || $current_day = "Sun" ]]; then
-                gapcheck=150
+            if [[ ${current_day} = "Sat" || ${current_day} = "Sun" ]]; then
+                no_tx_period_mins=150
             else
-                gapcheck=90
+                no_tx_period_mins=90
             fi
 
-            if [[ ${difference} -gt ${gapcheck} ]]; then
+            if [[ ${difference} -gt ${no_tx_period_mins} ]]; then
                 append_txlog_mail_file "txlog not written to for ${difference} mins"
                 record_txlog_unit_fail "TXLOG"
             fi
@@ -198,7 +198,7 @@ check_network_errors () {
         append_txlog_mail_file "ULOG showing COHFPRDOM network error"
         append_txlog_mail_file "Running CABS CLOSE"
 
-        ${parent_dir}/cabsclose >> $txlog_mail_file 2>&1
+        ${parent_dir}/cabsclose >> ${txlog_mail_file} 2>&1
         record_txlog_unit_fail "QSP NETWORK"
     fi
 }
@@ -210,7 +210,7 @@ check_cabsord_errors () {
         append_txlog_mail_file "ULOG showing tpcall to CABS_Ord failed"
         append_txlog_mail_file "Running CABS CLOSE"
 
-        ${parent_dir}/cabsclose >> $txlog_mail_file 2>&1
+        ${parent_dir}/cabsclose >> ${txlog_mail_file} 2>&1
         record_txlog_unit_fail "QSP CABS_Ord Failure"
     fi
 }
