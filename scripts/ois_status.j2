@@ -164,8 +164,7 @@ check_transaction_logs () {
     local current_mins_total=$(( ${current_hour#0} * 60 + ${current_min#0} ))
 
     if [[ ${current_mins_total} -ge ${start_mins} && ${current_mins_total} -le ${end_mins} ]]; then
-
-    if [[ ! -s ${txlog} ]]; then
+        if [[ ! -s ${txlog} ]]; then
             append_txlog_mail_file "TXLOG Not written to"
             record_txlog_unit_fail "TXLOG"
         else
@@ -186,7 +185,7 @@ check_transaction_logs () {
                 append_txlog_mail_file "txlog not written to for ${difference} mins"
                 record_txlog_unit_fail "TXLOG"
             fi
-    fi
+        fi
     fi
 }
 
