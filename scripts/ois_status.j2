@@ -108,7 +108,7 @@ check_orders_servers () {
 }
 
 check_domain_servers () {
-    dom_count=$(pgrep -u ${USER} DOMAIN | wc -l)
+    local dom_count=$(pgrep -u ${USER} DOMAIN | wc -l)
 
     if [[ ${dom_count} -lt ${dom_min_count} ]]; then
         append_txlog_mail_file "${today}, Tuxedo DOMAIN server is not running"
@@ -117,7 +117,7 @@ check_domain_servers () {
 }
 
 check_aisord_servers () {
-    aisord_count=$(pgrep -u ${USER} AISORD | wc -l)
+    local aisord_count=$(pgrep -u ${USER} AISORD | wc -l)
 
     if [[ ${aisord_count} -lt ${aisord_min_count} ]]; then
         append_txlog_mail_file "${today}, ${aisord_count} of 2 Tuxedo AIS servers running"
@@ -126,7 +126,7 @@ check_aisord_servers () {
 }
 
 check_queue_servers () {
-    queue_count=$(pgrep -u ${USER} TMQUEUE | wc -l)
+    local queue_count=$(pgrep -u ${USER} TMQUEUE | wc -l)
 
     if [[ ${queue_count} -lt ${queue_min_count} ]]; then
         append_txlog_mail_file "${today}, Tuxedo QUEUE server is not running"
@@ -135,7 +135,7 @@ check_queue_servers () {
 }
 
 check_sqsp_servers () {
-    sqsp_count=$(pgrep -u ${USER} SQSP | wc -l)
+    local sqsp_count=$(pgrep -u ${USER} SQSP | wc -l)
 
     if [[ ${sqsp_count} -lt ${sqsp_min_count} ]]; then
         append_txlog_mail_file "${today}, Tuxedo SQSP server is not running"
@@ -144,7 +144,7 @@ check_sqsp_servers () {
 }
 
 check_mncq_servers () {
-    mncq_count=$(ps -ef | grep ${USER} | grep mncq | grep -v mncq_rms | grep -v "grep" | wc -l)
+    local mncq_count=$(ps -ef | grep ${USER} | grep mncq | grep -v mncq_rms | grep -v "grep" | wc -l)
 
     if [[ ${mncq_count} -lt ${mncq_min_count} ]]; then
         append_txlog_mail_file "${today}, MNCQ process is not running"
@@ -191,7 +191,7 @@ check_transaction_logs () {
 
 
 check_network_errors () {
-    network_errors=$(tail -20 ${ulog} | grep "COHFPRDOM; network error code 0xc" | wc -l)
+    local network_errors=$(tail -20 ${ulog} | grep "COHFPRDOM; network error code 0xc" | wc -l)
 
     if [[ ${network_errors} -gt 0 ]]; then
         append_txlog_mail_file "ULOG showing COHFPRDOM network error"
@@ -203,7 +203,7 @@ check_network_errors () {
 }
 
 check_cabsord_errors () {
-    cabsord_errors=$(tail -20 ${ulog} | grep "tpcall to CABS_Ord failed" | wc -l)
+    local cabsord_errors=$(tail -20 ${ulog} | grep "tpcall to CABS_Ord failed" | wc -l)
 
     if [[ ${cabsord_errors} -gt 5 ]]; then
         append_txlog_mail_file "ULOG showing tpcall to CABS_Ord failed"
@@ -215,7 +215,7 @@ check_cabsord_errors () {
 }
 
 check_chips_errors () {
-    chips_errors=$(tail -45 ${trlog} | grep "rcode: -1" | wc -l)
+    local chips_errors=$(tail -45 ${trlog} | grep "rcode: -1" | wc -l)
 
     if [[ ${chips_errors} -gt 0 ]]; then
         append_trlog_mail_file "trlog showing -1 errors returned from CHIPS. CSI need to be contacted to rectify."
