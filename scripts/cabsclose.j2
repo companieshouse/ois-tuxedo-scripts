@@ -1,0 +1,39 @@
+#!/bin/bash
+
+# Stop CABS Tuxedo services
+
+# -- General ------------------------------------------------------------------
+
+check_user () {
+    if [[ "$USER" = "root" ]]; then
+        echo "This script should be executed as a Tuxedo service user not root"
+        exit 1
+    fi
+}
+
+print_timestamp () {
+    local timestamp=$(date +%A)" "$(date +%d)"/"$(date +%m)"/"$(date +%Y)" at "$(date +%r)
+    echo "Unadvertising QSP Tuxedo services for user "${USER}" on $timestamp"
+}
+
+unadvertise_services() {
+    tmadmin << EOF
+unadv -i3 -g DOMAIN_GROUP QSP_Ord
+unadv -i3 -g DOMAIN_GROUP QSP_Can
+unadv -i3 -g DOMAIN_GROUP QSP_Stat
+EOF
+}
+
+# -- Entrypoint ---------------------------------------------------------------
+
+main () {
+    check_user
+
+    if [[ -t 0 ]]; then
+        print_timestamp
+    fi
+
+    unadvertise_services
+}
+
+main "${@}"
