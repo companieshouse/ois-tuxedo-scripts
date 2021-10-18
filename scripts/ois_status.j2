@@ -14,7 +14,7 @@ txlog_failures=()
 trlog_failures=()
 txlog={{ tuxedo_logs_path }}/${USER}/txlog.${today}
 trlog={{ tuxedo_logs_path }}/${USER}/trlog.${today}
-ulog={{ tuxedo_logs_path }}/${USER}/ULOG.${today}
+ulog={{ tuxedo_logs_path }}/${USER}/ULOG.$(date +%m%d%y)
 
 unit_sleep_interval=20
 
