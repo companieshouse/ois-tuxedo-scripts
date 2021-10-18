@@ -227,11 +227,11 @@ check_chips_errors () {
 send_alert () {
     local subject=$(echo $1 | sort | uniq)
     local mail_file=$2
-    {% if alerts.enabled %}
+{% if alerts.enabled %}
     mailx -r $(hostname) -s "WARNING - ${subject}" {% for recipient in alerts.ois_status %}{{ recipient }} {% endfor %}< ${mail_file}
-    {% else %}
+{% else %}
     echo "Alerts disabled; no mail message(s) will be generated"
-    {% endif %}
+{% endif %}
 }
 
 # -- Entrypoint ---------------------------------------------------------------
