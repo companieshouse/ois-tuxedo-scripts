@@ -14,7 +14,7 @@ quit"
 # -- General ------------------------------------------------------------------
 
 check_user () {
-    if [[ "-u ${USER}" == "root" ]]; then
+    if [[ "${USER}" == "root" ]]; then
         echo "${script_name}: This script should be executed as a Tuxedo service user not root"
         exit 1
     fi
