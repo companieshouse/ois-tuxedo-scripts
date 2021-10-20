@@ -30,7 +30,7 @@ mncq_min_count=1
 # -- General ------------------------------------------------------------------
 
 check_user () {
-    if [[ "-u ${USER}" = "root" ]]; then
+    if [[ "-u ${USER}" == "root" ]]; then
         echo "${script_name}: This script should be executed as a Tuxedo service user not root"
         exit 1
     fi
@@ -175,7 +175,7 @@ check_transaction_logs () {
 
             local difference=$(( ${current_mins_total#0} - ${last_tx_mins_total#0} ))
 
-            if [[ ${current_day} = "Sat" || ${current_day} = "Sun" ]]; then
+            if [[ ${current_day} == "Sat" || ${current_day} == "Sun" ]]; then
                 local no_tx_period_mins=150
             else
                 local no_tx_period_mins=90

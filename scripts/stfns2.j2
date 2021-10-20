@@ -1,0 +1,46 @@
+# AWK program source file for generating data for business functions
+
+BEGIN { FS="[\t]";
+OFS="\t";}
+{
+	maxtime = 100;
+	if ( $2 == fno ) {
+		restime = $3;
+		rescode = $10;
+		contmsg = $13;
+		msglen = $14;
+		if ((rescode == 0) || (rescode == 1900))
+			OKmsg = 0;
+		else OKmsg = 1;
+		if (OKmsg == 0) goodmsg ++
+		else failmsg ++
+		if ((restime > 0) && (restime < maxtime)) {
+			respt = (restime + respt);
+			count ++;
+			if (restime > maxrestime) maxrestime = restime;
+		}
+		if (contmsg == " Y") contmsgs ++
+		if (restime > 2) restime2 ++
+		if (restime > 5) restime5 ++
+ 		if (restime > 9) restime9 ++
+		k = 0
+		if ($4 > 0) k++
+		if ($5 > 0) k++
+		if ($6 > 0) k++
+		if (k > 1) multpubl ++
+		if ((msglen >= 0) && (OKmsg == 0)) {
+			totmsglen += msglen
+			mlencount ++
+			if (msglen > maxmsglen) maxmsglen = msglen;
+		}
+	}
+}
+END {
+	if (count > 0) averespt = (respt/count)
+	if (mlencount > 0) avemlenc = (totmsglen/mlencount)
+	printf("%d\t%d\t%d\t%d\t%.02f\t%d\t%d\t%d\n",
+		fno, count, goodmsg, failmsg, averespt,
+		restime2, restime5, restime9 );
+
+}
+

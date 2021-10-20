@@ -1,0 +1,48 @@
+
+#ident "@(#) dofns 1.8@(#). Last Delta:(2/9/01)_(12:21:16)"
+#
+# Filename: dofns
+#    Calls stfns2 for each Business function
+
+
+
+#!/bin/bash
+
+# -- Internal variables -------------------------------------------------------
+
+function_start=1
+function_end=29
+
+# -- General ------------------------------------------------------------------
+
+# #dir="$HOME/$REL/bin/"
+# dir="$HOME/$REL/scripts/"
+# cat $dir"fnshdr" > $2
+# nawk -f $dir"stfns2" fno=1 $1>> $2
+# nawk -f $dir"stfns2" fno=2 $1>> $2
+# nawk -f $dir"stfns2" fno=3 $1>> $2
+# nawk -f $dir"stfns2" fno=4 $1>> $2
+# nawk -f $dir"stfns2" fno=5 $1>> $2
+# nawk -f $dir"stfns2" fno=6 $1>> $2
+# nawk -f $dir"stfns2" fno=7 $1>> $2
+# nawk -f $dir"stfns2" fno=8 $1>> $2
+# nawk -f $dir"stfns2" fno=9 $1>> $2
+# nawk -f $dir"stfns2" fno=10 $1>> $2
+# nawk -f $dir"stfns2" fno=11 $1>> $2
+# nawk -f $dir"stfns2" fno=12 $1>> $2
+# nawk -f $dir"stfns2" fno=13 $1>> $2
+# nawk -f $dir"stfns2" fno=16 $1>> $2
+# nawk -f $dir"stfns2" fno=17 $1>> $2
+# nawk -f $dir"stfns2" fno=18 $1>> $2
+# nawk -f $dir"stfns2" fno=18s $1>> $2
+# nawk -f $dir"stfns2" fno=20 $1>> $2
+# nawk -f $dir"stfns2" fno=23 $1>> $2
+# nawk -f $dir"stfns2" fno=24 $1>> $2
+# nawk -f $dir"stfns2" fno=26 $1>> $2
+# nawk -f $dir"stfns2" fno=27 $1>> $2
+# nawk -f $dir"stfns2" fno=28 $1>> $2
+# nawk -f $dir"stfns2" fno=29 $1>> $2
+
+for function_number in $(seq ${function_start} ${function_end}); do
+    echo $function_number
+done
