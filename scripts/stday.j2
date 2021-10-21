@@ -1,0 +1,20 @@
+# AWK program source file for generating daily stats
+
+BEGIN { FS="[,]";
+OFS="\t";}
+{       nof = 14;
+        of[1] = 6100; of[2] = 6200; of[3] = 6203; of[4] = 6204;
+        of[5] = 6205; of[6] = 6201; of[7] = 6202; of[8] = 6206;
+        of[9] = 6666; of[10] = 6025; of[11] = 6026; of[12] = 6003;
+        of[13] = 6111; of[14] = 6317;
+        for (j=1; j<=nof; j++) {
+                for (i=2; i<= NF; i++) {
+                        sv = split($i, value, "=");
+                        if (value[1] == of[j]) res[j]=value[2];
+                }
+        }
+   	printf("%8s\t%4s\t%9s\t%7s\t%7s\t%7s\t%6s\t%6s\t%6s\t%4s\t%2s\t%9s\t%2s\t%s\t%s\n",
+        $1, res[1], res[2], res[3], res[4], res[5], res[6], res[7],
+        res[8], res[9], res[10], res[11], res[12], res[13], res[14]);
+}
+

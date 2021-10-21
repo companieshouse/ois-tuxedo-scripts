@@ -14,7 +14,7 @@ txlog_failures=()
 trlog_failures=()
 txlog={{ tuxedo_logs_path }}/${USER}/txlog.${today}
 trlog={{ tuxedo_logs_path }}/${USER}/trlog.${today}
-ulog={{ tuxedo_logs_path }}/${USER}/ULOG.${today}
+ulog={{ tuxedo_logs_path }}/${USER}/ULOG.$(date +%m%d%y)
 
 unit_sleep_interval=20
 
@@ -30,7 +30,7 @@ mncq_min_count=1
 # -- General ------------------------------------------------------------------
 
 check_user () {
-    if [[ "-u ${USER}" = "root" ]]; then
+    if [[ "${USER}" == "root" ]]; then
         echo "${script_name}: This script should be executed as a Tuxedo service user not root"
         exit 1
     fi
@@ -175,7 +175,7 @@ check_transaction_logs () {
 
             local difference=$(( ${current_mins_total#0} - ${last_tx_mins_total#0} ))
 
-            if [[ ${current_day} = "Sat" || ${current_day} = "Sun" ]]; then
+            if [[ ${current_day} == "Sat" || ${current_day} == "Sun" ]]; then
                 local no_tx_period_mins=150
             else
                 local no_tx_period_mins=90
@@ -227,11 +227,11 @@ check_chips_errors () {
 send_alert () {
     local subject=$(echo $1 | sort | uniq)
     local mail_file=$2
-    {% if alerts.enabled %}
+{% if alerts.enabled %}
     mailx -r $(hostname) -s "WARNING - ${subject}" {% for recipient in alerts.ois_status %}{{ recipient }} {% endfor %}< ${mail_file}
-    {% else %}
+{% else %}
     echo "Alerts disabled; no mail message(s) will be generated"
-    {% endif %}
+{% endif %}
 }
 
 # -- Entrypoint ---------------------------------------------------------------

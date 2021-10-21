@@ -1,0 +1,122 @@
+#!/bin/bash
+
+# Generate and email statistics for response times, SLA figures, hourly requests
+# and function calls.
+
+# -- Internal variables -------------------------------------------------------
+
+script_name=$(basename "$0")
+parent_dir="$(cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd)"
+
+today=$(date +%d%m%y)
+yesterday=$(date --date=yesterday +%d%m%y)
+reqdate=${1-$yesterday}
+
+log_dir="{{ tuxedo_logs_path }}/${USER}"
+log_archive_dir="${log_dir}/old"
+
+# -- General ------------------------------------------------------------------
+
+check_user () {
+    if [[ "${USER}" == "root" ]]; then
+        echo "${script_name}: This script should be executed as a Tuxedo service user not root"
+        exit 1
+    fi
+}
+
+create_stats_dir () {
+    stats_dir=$(mktemp -d /tmp/oisstats.XXXXXXX)
+    if [[ $? -ne 0 ]]; then
+        echo "Unable to create oisstats temporary directory" >&2
+        exit 1
+    fi
+}
+
+prepare_request_file () {
+    if [[ "${reqdate}" == "${today}" ]]; then
+        cp "${log_dir}/txlog.${today}" "${stats_dir}"
+        reqfile="${stats_dir}/txlog.${today}"
+    else
+        # We assume that past logs have been rotated and that only a single compressed
+        # archive encapsulates the log for a given date in its entirety (i.e. .1.gz)
+        reqfile="${log_archive_dir}/txlog.${reqdate}.1.gz"
+    fi
+
+    if [[ ! -f "${reqfile}" ]]; then
+        echo "txlog.$reqdate does not exist"
+        exit 1
+    fi
+
+    echo "*** Reqdate is ${reqdate}"
+    echo "*** Reqfile is ${reqfile}"
+}
+
+create_days_file () {
+    days_file="${stats_dir}/days.${reqdate}"
+    awk -f "${parent_dir}/stday" <(zcat "${reqfile}" | sed s/6100=18s/6100=18/g) > "${days_file}"
+}
+
+generate_response_times () {
+    local respone_times_file="${stats_dir}/restime.${reqdate}"
+    echo -e "\t\tTransaction response times for ${reqdate}" >> "${respone_times_file}"
+    echo -e "\t\t~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~" >> "${respone_times_file}"
+    awk -f "${parent_dir}/stimes" "${days_file}" >> "${respone_times_file}"
+}
+
+generate_sla_figures () {
+    sla_figures_file=${stats_dir}/qomres.${reqdate}
+    echo -e "\t\tService level agreement figures for ${reqdate}" >> "${sla_figures_file}"
+    echo -e "\t\t~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~" >> "${sla_figures_file}"
+    awk -f "${parent_dir}/stqom" "${days_file}" >> "${sla_figures_file}"
+    echo >> "${sla_figures_file}"
+}
+
+generate_function_stats () {
+    function_stats_file="${stats_dir}/resfns.${reqdate}"
+    echo -e "\t\tMessage details for functions on ${reqdate}" >> "${function_stats_file}"
+    echo -e "\t\t~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~" >> "${function_stats_file}"
+    "${parent_dir}/dofns" "${days_file}" "${function_stats_file}"
+    echo >> "${function_stats_file}"
+}
+
+generate_hourly_stats () {
+    hourly_stats_file="${stats_dir}/hours.${reqdate}"
+    echo -e "\t\tHourly figures for "$reqdate >> "${hourly_stats_file}"
+    echo -e "\t\t~~~~~~~~~~~~~~~~~~~~~~~~~~" >> "${hourly_stats_file}"
+    "${parent_dir}/doday" "${days_file}" "${hourly_stats_file}"
+    echo >> "${hourly_stats_file}"
+}
+
+delete_stats_dir () {
+    rm -rf "${stats_dir}"
+}
+
+# -- Alerting -----------------------------------------------------------------
+
+send_stats () {
+{% if stats.enabled %}
+   mailx -s "XML STATS - Totals ${reqdate}" {% for recipient in stats.recipients %}{{ recipient }} {% endfor %}< "${sla_figures_file}"
+   mailx -s "XML STATS - By Function ${reqdate}" {% for recipient in stats.recipients %}{{ recipient }} {% endfor %}< "${function_stats_file}"
+   mailx -s "XML STATS - Hourly ${reqdate}" {% for recipient in stats.recipients %}{{ recipient }} {% endfor %}< "${hourly_stats_file}"
+{% else %}
+   echo "Stats disabled; no mail message(s) will be generated"
+{% endif %}
+}
+
+# -- Entrypoint ---------------------------------------------------------------
+
+main () {
+    check_user
+
+    create_stats_dir
+    prepare_request_file
+    create_days_file
+    generate_response_times
+    generate_sla_figures
+    generate_function_stats
+    generate_hourly_stats
+    send_stats
+    delete_stats_dir
+}
+
+main "${@}"

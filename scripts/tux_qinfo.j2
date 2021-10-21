@@ -1,10 +1,17 @@
 #!/bin/bash
 
-# Stop CABS Tuxedo services
+# This script outputs the number of persistent messages and pages belonging
+# to each of the available queues.
 
 # -- Internal variables -------------------------------------------------------
 
 script_name=$(basename "$0")
+
+admin_cmd="
+echo
+qopen QSPACE
+qinfo
+quit"
 
 # -- General ------------------------------------------------------------------
 
@@ -15,29 +22,15 @@ check_user () {
     fi
 }
 
-print_timestamp () {
-    local timestamp=$(date +%A)" "$(date +%d)"/"$(date +%m)"/"$(date +%Y)" at "$(date +%r)
-    echo "Unadvertising QSP Tuxedo services for user "${USER}" on ${timestamp}"
-}
-
-unadvertise_services() {
-    tmadmin << EOF
-unadv -i3 -g DOMAIN_GROUP QSP_Ord
-unadv -i3 -g DOMAIN_GROUP QSP_Can
-unadv -i3 -g DOMAIN_GROUP QSP_Stat
-EOF
+read_queue_info () {
+    awk 'BEGIN {printf("\nXML - Tuxedo Queue Info...\n--------------------------")} /QSPACE/ {printf("\n%s:\n",$3)}; /Queue/ {print $0}' < <(qmadmin 2>/dev/null <<<"${admin_cmd}")
 }
 
 # -- Entrypoint ---------------------------------------------------------------
 
 main () {
     check_user
-
-    if [[ -t 0 ]]; then
-        print_timestamp
-    fi
-
-    unadvertise_services
+    read_queue_info
 }
 
 main "${@}"

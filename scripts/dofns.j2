@@ -1,0 +1,34 @@
+#!/bin/bash
+
+# Execute stfns2 for each business function
+
+# -- Internal variables -------------------------------------------------------
+
+function_start=1
+function_end=29
+parent_dir="$(cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd)"
+
+# -- General ------------------------------------------------------------------
+
+process_days_functions () {
+    local function_number="$1"
+    local input_file="$2"
+    local output_file="$3"
+
+    awk -f "${parent_dir}/stfns2" fno="${function_number}" "${input_file}" >> "${output_file}"
+}
+
+# -- Entrypoint ---------------------------------------------------------------
+
+main () {
+    local input_file="$1"
+    local output_file="$2"
+
+    cat "${parent_dir}/fnshdr" >> "${output_file}"
+
+    for function_number in $(seq "${function_start}" "${function_end}"); do
+        process_days_functions "${function_number}" "${input_file}" "${output_file}"
+    done
+}
+
+main "${@}"

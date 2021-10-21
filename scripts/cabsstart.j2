@@ -2,13 +2,17 @@
 
 # Start CABS Tuxedo services
 
+# -- Internal variables -------------------------------------------------------
+
+script_name=$(basename "$0")
+
 # -- General ------------------------------------------------------------------
 
 check_user () {
-    if [[ "$USER" = "root" ]]; then
-        echo "This script should be executed as a Tuxedo service user not root"
+    if [[ "${USER}" == "root" ]]; then
+        echo "${script_name}: This script should be executed as a Tuxedo service user not root"
         exit 1
-    elif [[ "$USER" = "ois" ]]; then
+    elif [[ "${USER}" == "ois" ]]; then
         local_domain=$(hostname | sed -E 's/(.*)-tuxedo-(.*)-(.*)/OIS_INSTANCE_\U\3_\U\2_LOD/')
     else
         local_domain=$(tr [:lower:] [:upper:] <<< ${USER})_$(hostname | sed -E 's/(.*)-tuxedo-(.*)-(.*)/\U\1_INSTANCE_\U\3_\U\2_LOD/')
@@ -17,7 +21,7 @@ check_user () {
 
 print_timestamp () {
     local timestamp=$(date +%A)" "$(date +%d)"/"$(date +%m)"/"$(date +%Y)" at "$(date +%r)
-    echo "Advertising QSP Tuxedo services for user "${USER}" on $timestamp"
+    echo "Advertising QSP Tuxedo services for user "${USER}" on ${timestamp}"
 }
 
 advertise_services() {
