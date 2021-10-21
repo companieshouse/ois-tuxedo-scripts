@@ -77,10 +77,10 @@ main () {
     check_user
     create_mail_file
 
-    check_error_queue ERRORQ ${error_threshold}
+    check_error_queue ERRORQ "${error_threshold}"
 
     if [[ "${USER}" == "publ" ]]; then
-        check_error_queue ERRORQ2 ${error_threshold}
+        check_error_queue ERRORQ2 "${error_threshold}"
     fi
 
     if [[ "${error_threshold_exceeded}" == "true" ]]; then
