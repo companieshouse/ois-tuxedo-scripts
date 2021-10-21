@@ -66,7 +66,11 @@ send_alert () {
     local mail_header="One or more errorq exceeded ${error_threshold} messages"
     local mail_footer="Deleting"
 
+{% if alerts.enabled %}
     mailx -r $(hostname) -s "WARNING - ERRORQ" {% for recipient in alerts.error_queues %}{{ recipient }} {% endfor %}< <(echo "${mail_header}"; cat "${mail_file}"; echo "${mail_footer}")
+{% else %}
+    echo "Alerts disabled; no mail message(s) will be generated"
+{% endif %}
 }
 
 # -- Entrypoint ---------------------------------------------------------------
