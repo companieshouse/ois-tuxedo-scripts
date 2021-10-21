@@ -65,7 +65,7 @@ send_alert () {
     local mail_footer="Deleting"
 
 {% if alerts.enabled %}
-    mailx -r $(hostname) -s "WARNING - ERRORQ" {% for recipient in alerts.error_queues %}{{ recipient }} {% endfor %}< <(echo "${mail_header}"; cat "${mail_file}"; echo "${mail_footer}")
+    mailx -r $(hostname) -s "WARNING - ERRORQ" {% for recipient in alerts.error_queues %}{{ recipient }} {% endfor %}< <(echo "${mail_header}"; cat "${mail_file}"; echo -e "${mail_footer}\n")
 {% else %}
     echo "Alerts disabled; no mail message(s) will be generated"
 {% endif %}
