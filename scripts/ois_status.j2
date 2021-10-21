@@ -37,8 +37,6 @@ check_user () {
 }
 
 create_mail_files () {
-    local name=$1
-
     txlog_mail_file=$(mktemp -t txlog_mail.XXXXXXX)
     if [[ $? -ne 0 ]]; then
         echo "Unable to create txlog_mail temporary file" >&2
@@ -53,7 +51,7 @@ create_mail_files () {
 }
 
 record_txlog_unit_fail () {
-    local unit=$1
+    local unit="$1"
 
     IFS=" "
     if [[ ! "${IFS}${txlog_failures[*]}${IFS}" =~ "${IFS}${unit}${IFS}" ]]; then
@@ -63,7 +61,7 @@ record_txlog_unit_fail () {
 }
 
 record_trlog_unit_fail () {
-    local unit=$1
+    local unit="$1"
 
     IFS=" "
     if [[ ! "${IFS}${trlog_failures[*]}${IFS}" =~ "${IFS}${unit}${IFS}" ]]; then
@@ -73,80 +71,80 @@ record_trlog_unit_fail () {
 }
 
 append_txlog_mail_file () {
-    local message=$1
-    echo ${message} >> ${txlog_mail_file}
+    local message="$1"
+    echo "${message}" >> "${txlog_mail_file}"
 }
 
 append_trlog_mail_file () {
-    local message=$1
-    echo ${message} >> ${trlog_mail_file}
+    local message="$1"
+    echo "${message}" >> "${trlog_mail_file}"
 }
 
 delete_mail_files () {
-    rm -f ${txlog_mail_file}
-    rm -f ${trlog_mail_file}
+    rm -f "${txlog_mail_file}"
+    rm -f "${trlog_mail_file}"
 }
 
 # -- Server counts ------------------------------------------------------------
 
 check_bbl () {
-    local bbl_count=$(pgrep -u ${USER} BBL | wc -l)
+    local bbl_count=$(pgrep -u "${USER}" BBL | wc -l)
 
-    if [[ ${bbl_count} -lt ${bbl_min_count} ]]; then
+    if [[ "${bbl_count}" -lt "${bbl_min_count}" ]]; then
         append_txlog_mail_file "${today}, Tuxedo BBL is not running"
         record_txlog_unit_fail "BBL"
     fi
 }
 
 check_orders_servers () {
-    local orders_count=$(pgrep -u ${USER} ORDERS | wc -l)
+    local orders_count=$(pgrep -u "${USER}" ORDERS | wc -l)
 
-    if [[ ${orders_count} -lt ${orders_min_count} ]]; then
+    if [[ "${orders_count}" -lt "${orders_min_count}" ]]; then
         append_txlog_mail_file "${today}, ${orders_count} of 8 ORDERS servers running"
         record_txlog_unit_fail "ORDERS SERVERS"
     fi
 }
 
 check_domain_servers () {
-    local dom_count=$(pgrep -u ${USER} DOMAIN | wc -l)
+    local dom_count=$(pgrep -u "${USER}" DOMAIN | wc -l)
 
-    if [[ ${dom_count} -lt ${dom_min_count} ]]; then
+    if [[ "${dom_count}" -lt "${dom_min_count}" ]]; then
         append_txlog_mail_file "${today}, Tuxedo DOMAIN server is not running"
         record_txlog_unit_fail "DOM SERVERS"
     fi
 }
 
 check_aisord_servers () {
-    local aisord_count=$(pgrep -u ${USER} AISORD | wc -l)
+    local aisord_count=$(pgrep -u "${USER}" AISORD | wc -l)
 
-    if [[ ${aisord_count} -lt ${aisord_min_count} ]]; then
+    if [[ "${aisord_count}" -lt "${aisord_min_count}" ]]; then
         append_txlog_mail_file "${today}, ${aisord_count} of 2 Tuxedo AIS servers running"
         record_txlog_unit_fail "AIS SERVERS"
     fi
 }
 
 check_queue_servers () {
-    local queue_count=$(pgrep -u ${USER} TMQUEUE | wc -l)
+    local queue_count=$(pgrep -u "${USER}" TMQUEUE | wc -l)
 
-    if [[ ${queue_count} -lt ${queue_min_count} ]]; then
+    if [[ "${queue_count}" -lt "${queue_min_count}" ]]; then
         append_txlog_mail_file "${today}, Tuxedo QUEUE server is not running"
         record_txlog_unit_fail "Q SERVERS"
     fi
 }
 
 check_sqsp_servers () {
-    local sqsp_count=$(pgrep -u ${USER} SQSP | wc -l)
+    local sqsp_count=$(pgrep -u "${USER}" SQSP | wc -l)
 
-    if [[ ${sqsp_count} -lt ${sqsp_min_count} ]]; then
+    if [[ "${sqsp_count}" -lt "${sqsp_min_count}" ]]; then
         append_txlog_mail_file "${today}, Tuxedo SQSP server is not running"
         record_txlog_unit_fail "SQSP SERVER"
     fi
 }
 
 check_mncq_servers () {
-    local mncq_count=$(ps -ef | grep ${USER} | grep mncq | grep -v mncq_rms | grep -v "grep" | wc -l)
+    local mncq_count=$(ps -ef | grep "${USER}" | grep mncq | grep -v mncq_rms | grep -v "grep" | wc -l)
 
-    if [[ ${mncq_count} -lt ${mncq_min_count} ]]; then
+    if [[ "${mncq_count}" -lt "${mncq_min_count}" ]]; then
         append_txlog_mail_file "${today}, MNCQ process is not running"
         record_txlog_unit_fail "MNCQ"
     fi
@@ -155,16 +153,16 @@ check_mncq_servers () {
 # -- Log checks ---------------------------------------------------------------
 
 check_transaction_logs () {
-    local start_mins=$1
-    local end_mins=$2
+    local start_mins="$1"
+    local end_mins="$2"
 
     local current_day=$(date +%a)
     local current_hour=$(date +%H)
     local current_min=$(date +%M)
     local current_mins_total=$(( ${current_hour#0} * 60 + ${current_min#0} ))
 
-    if [[ ${current_mins_total} -ge ${start_mins} && ${current_mins_total} -le ${end_mins} ]]; then
-        if [[ ! -s ${txlog} ]]; then
+    if [[ "${current_mins_total}" -ge "${start_mins}" && "${current_mins_total}" -le "${end_mins}" ]]; then
+        if [[ ! -s "${txlog}" ]]; then
             append_txlog_mail_file "TXLOG Not written to"
             record_txlog_unit_fail "TXLOG"
         else
@@ -175,13 +173,13 @@ check_transaction_logs () {
 
             local difference=$(( ${current_mins_total#0} - ${last_tx_mins_total#0} ))
 
-            if [[ ${current_day} == "Sat" || ${current_day} == "Sun" ]]; then
+            if [[ "${current_day}" == "Sat" || "${current_day}" == "Sun" ]]; then
                 local no_tx_period_mins=150
             else
                 local no_tx_period_mins=90
             fi
 
-            if [[ ${difference} -gt ${no_tx_period_mins} ]]; then
+            if [[ "${difference}" -gt "${no_tx_period_mins}" ]]; then
                 append_txlog_mail_file "txlog not written to for ${difference} mins"
                 record_txlog_unit_fail "TXLOG"
             fi
@@ -190,33 +188,33 @@ check_transaction_logs () {
 }
 
 check_network_errors () {
-    local network_errors=$(tail -20 ${ulog} | grep "COHFPRDOM; network error code 0xc" | wc -l)
+    local network_errors=$(tail -20 "${ulog}" | grep "COHFPRDOM; network error code 0xc" | wc -l)
 
-    if [[ ${network_errors} -gt 0 ]]; then
+    if [[ "${network_errors}" -gt 0 ]]; then
         append_txlog_mail_file "ULOG showing COHFPRDOM network error"
         append_txlog_mail_file "Running CABS CLOSE"
 
-        ${parent_dir}/cabsclose >> ${txlog_mail_file} 2>&1
+        "${parent_dir}/cabsclose" >> "${txlog_mail_file}" 2>&1
         record_txlog_unit_fail "QSP NETWORK"
     fi
 }
 
 check_cabsord_errors () {
-    local cabsord_errors=$(tail -20 ${ulog} | grep "tpcall to CABS_Ord failed" | wc -l)
+    local cabsord_errors=$(tail -20 "${ulog}" | grep "tpcall to CABS_Ord failed" | wc -l)
 
-    if [[ ${cabsord_errors} -gt 5 ]]; then
+    if [[ "${cabsord_errors}" -gt 5 ]]; then
         append_txlog_mail_file "ULOG showing tpcall to CABS_Ord failed"
         append_txlog_mail_file "Running CABS CLOSE"
 
-        ${parent_dir}/cabsclose >> ${txlog_mail_file} 2>&1
+        "${parent_dir}/cabsclose" >> "${txlog_mail_file}" 2>&1
         record_txlog_unit_fail "QSP CABS_Ord Failure"
     fi
 }
 
 check_chips_errors () {
-    local chips_errors=$(tail -45 ${trlog} | grep "rcode: -1" | wc -l)
+    local chips_errors=$(tail -45 "${trlog}" | grep "rcode: -1" | wc -l)
 
-    if [[ ${chips_errors} -gt 0 ]]; then
+    if [[ "${chips_errors}" -gt 0 ]]; then
         append_trlog_mail_file "trlog showing -1 errors returned from CHIPS. CSI need to be contacted to rectify."
         record_trlog_unit_fail "CHIPS"
     fi
@@ -226,9 +224,9 @@ check_chips_errors () {
 
 send_alert () {
     local subject=$(echo $1 | sort | uniq)
-    local mail_file=$2
+    local mail_file="$2"
 {% if alerts.enabled %}
-    mailx -r $(hostname) -s "WARNING - ${subject}" {% for recipient in alerts.ois_status %}{{ recipient }} {% endfor %}< ${mail_file}
+    mailx -r $(hostname) -s "WARNING - ${subject}" {% for recipient in alerts.ois_status %}{{ recipient }} {% endfor %}< "${mail_file}"
 {% else %}
     echo "Alerts disabled; no mail message(s) will be generated"
 {% endif %}
@@ -254,13 +252,13 @@ main () {
     check_chips_errors
     check_cabsord_errors
 
-    if [[ -s ${txlog_mail_file} ]]; then
+    if [[ -s "${txlog_mail_file}" ]]; then
     subject=$(echo ${txlog_failures[@]} | sort | uniq)
         append_txlog_mail_file ""
         send_alert "OIS Problem - ${subject}" "${txlog_mail_file}"
     fi
 
-    if [[ -s ${trlog_mail_file} ]]; then
+    if [[ -s "${trlog_mail_file}" ]]; then
         subject=$(echo ${trlog_failures[@]} | sort | uniq)
         append_trlog_mail_file ""
         send_alert "TRLOG Problem - ${trlog_failures}" "${trlog_mail_file}"
