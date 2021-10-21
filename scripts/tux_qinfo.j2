@@ -5,6 +5,8 @@
 
 # -- Internal variables -------------------------------------------------------
 
+script_name=$(basename "$0")
+
 admin_cmd="
 echo
 qopen QSPACE
@@ -21,7 +23,7 @@ check_user () {
 }
 
 read_queue_info () {
-    awk 'BEGIN {printf("\nXML - Tuxedo Queue Info...\n--------------------------")} /QSPACE/ {printf("\n%s:\n",$3)}; /Queue/ {print $0}' < <(qmadmin 2>/dev/null <<<"$admin_cmd")
+    awk 'BEGIN {printf("\nXML - Tuxedo Queue Info...\n--------------------------")} /QSPACE/ {printf("\n%s:\n",$3)}; /Queue/ {print $0}' < <(qmadmin 2>/dev/null <<<"${admin_cmd}")
 }
 
 # -- Entrypoint ---------------------------------------------------------------

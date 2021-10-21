@@ -1,4 +1,4 @@
-# AWK program source file for listing response times for each transaction
+# AWK program source file for generating response times for each transaction
 
 BEGIN { FS="[\t]";
 OFS="\t";
@@ -24,4 +24,3 @@ END {
         printf("Number of Transactions: %d, Average Response Time: %.2f\n",
                 count, (respt / count));
 }
-
