@@ -8,8 +8,8 @@
 script_name=$(basename "$0")
 parent_dir="$(cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd)"
 
-error_threshold=5000
-error_threshold_exceeded=false
+error_threshold="5000"
+error_threshold_exceeded="false"
 
 # -- General ------------------------------------------------------------------
 
@@ -34,8 +34,8 @@ check_error_queue () {
 
     local queue_error_count=$(grep "${queue_name}:" <(${parent_dir}/tux_qinfo) | cut -d" " -f3)
 
-    if [[ ${queue_error_count} -gt ${queue_error_threshold} ]]; then
-        error_threshold_exceeded=true
+    if [[ "${queue_error_count}" -gt "${queue_error_threshold}" ]]; then
+        error_threshold_exceeded="true"
         echo "${queue_name}  : ${queue_error_count} messages" >> "${mail_file}"
     fi
 }
