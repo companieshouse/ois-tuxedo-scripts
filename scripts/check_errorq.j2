@@ -44,15 +44,13 @@ delete_error_messages () {
     local queue_space_name="$1"
     local queue_name="$2"
 
-    local admin_cmd="
+    qmadmin <<<"
     echo
     qopen ${queue_space_name}
     qset ${queue_name}
     qdltm -y
     quit
     END"
-
-    qmadmin 2>/dev/null <<<"$admin_cmd"
 }
 
 delete_mail_file () {
