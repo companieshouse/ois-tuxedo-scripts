@@ -1,0 +1,39 @@
+#!/bin/bash
+
+# Generate hourly stats for a full day
+
+# -- Internal variables -------------------------------------------------------
+
+hour_start=0
+hour_end=23
+
+function_start=1
+function_end=24
+
+parent_dir="$(cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd)"
+
+# -- General ------------------------------------------------------------------
+
+generate_hourly_stats () {
+    local function_number="$1"
+    local hour="$2"
+    local input_file="$3"
+    local output_file="$4"
+
+    awk -f "${parent_dir}/stfns3" fno="${function_number}" tint="${hour}" "${input_file}" >> "${output_file}"
+}
+
+# -- Entrypoint ---------------------------------------------------------------
+
+main () {
+    local input_file="$1"
+    local output_file="$2"
+
+    for hour in $(seq "${hour_start}" "${hour_end}"); do
+        for function_number in $(seq "${function_start}" "${function_end}"); do
+            generate_hourly_stats "${function_number}" "${hour}" "${input_file}" "${output_file}"
+        done
+    done
+}
+
+main "${@}"
