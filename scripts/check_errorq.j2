@@ -44,7 +44,7 @@ delete_error_messages () {
     local queue_space_name="$1"
     local queue_name="$2"
 
-    admin_cmd="
+    local admin_cmd="
     echo
     qopen ${queue_space_name}
     qset ${queue_name}
