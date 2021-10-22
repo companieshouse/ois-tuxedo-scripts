@@ -1,0 +1,70 @@
+#!/bin/bash
+
+# Check Tuxeedo queues and generate email alerts if high watermark exceeded.
+
+# -- Internal variables -------------------------------------------------------
+
+script_name=$(basename "$0")
+
+watermark_files_present="false"
+
+# -- General ------------------------------------------------------------------
+
+check_user () {
+    if [[ "${USER}" == "root" ]]; then
+        echo "${script_name}: This script should be executed as a Tuxedo service user not root"
+        exit 1
+    fi
+}
+
+create_mail_file () {
+    mail_file=$(mktemp -t qwarning.XXXXXXX)
+    if [[ $? -ne 0 ]]; then
+        echo "Unable to create temporary mail file" >&2
+        exit 1
+    fi
+}
+
+check_watermark_files () {
+    if compgen -G "{{ tuxedo_logs_path }}/${USER}/*_capacity" > /dev/null; then
+        echo "Queue warning message for the following has been triggered" >> "${mail_file}"
+        ls {{ tuxedo_logs_path }}/${USER}/*_capacity >> "${mail_file}"
+        echo >> "${mail_file}"
+        watermark_files_present="true"
+    fi
+}
+
+delete_watermark_files () {
+    rm -f {{ tuxedo_logs_path }}/${USER}/*_capacity
+}
+
+delete_mail_file () {
+    rm -f "${mail_file}"
+}
+
+# -- Alerting -----------------------------------------------------------------
+
+send_alert () {
+{% if alerts.enabled %}
+    mailx -r $(hostname) -s "WARNING - Queue Problem"  {% for recipient in alerts.watermark_files %}{{ recipient }} {% endfor %}< "${mail_file}"
+{% else %}
+    echo "Alerts disabled; no mail message(s) will be generated"
+{% endif %}
+}
+
+# -- Entrypoint ---------------------------------------------------------------
+
+main () {
+    check_user
+    create_mail_file
+    check_watermark_files
+
+    if [[ "${watermark_files_present}" == "true" ]]; then
+        delete_watermark_files
+        send_alert
+    fi
+
+    delete_mail_file
+}
+
+main "${@}"
