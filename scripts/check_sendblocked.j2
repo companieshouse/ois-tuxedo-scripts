@@ -1,0 +1,67 @@
+#!/bin/bash
+
+# Check for blocked QSP transfers and generate email alerts if the last N number
+# of lines of user log indicates retry attempts.
+
+# -- Internal variables -------------------------------------------------------
+
+script_name=$(basename "$0")
+
+user_log="{{ tuxedo_logs_path }}/${USER}/ULOG.$(date +%m%d%y)"
+user_log_lines="50"
+transfers_blocked="false"
+
+# -- General ------------------------------------------------------------------
+
+check_user () {
+    if [[ "${USER}" == "root" ]]; then
+        echo "${script_name}: This script should be executed as a Tuxedo service user not root"
+        exit 1
+    fi
+}
+
+create_mail_file () {
+    mail_file=$(mktemp -t check_sendblocked.XXXXXXX)
+    if [[ $? -ne 0 ]]; then
+        echo "Unable to create temporary mail file" >&2
+        exit 1
+    fi
+}
+
+check_transfers () {
+    if tail -${user_log_lines} "${user_log}" | grep "will try file transfer" 1>/dev/null 2>&1; then
+        echo "Possible QSP Error - Please check" >> "${mail_file}"
+        echo -e "May need to run cabsclose.\n" >> "${mail_file}"
+        transfers_blocked="true"
+    fi
+}
+
+delete_mail_file () {
+    rm -f "${mail_file}"
+}
+
+# -- Alerting -----------------------------------------------------------------
+
+send_alert () {
+{% if alerts.enabled %}
+    mailx -r $(hostname) -s "WARNING - Tpreturn Error." {% for recipient in alerts.send_blocked %}{{ recipient }} {% endfor %}< "${mail_file}"
+{% else %}
+    echo "Alerts disabled; no mail message(s) will be generated"
+{% endif %}
+}
+
+# -- Entrypoint ---------------------------------------------------------------
+
+main () {
+    check_user
+    create_mail_file
+    check_transfers
+
+    if [[ "${transfers_blocked}" == "true" ]]; then
+        send_alert
+    fi
+
+    delete_mail_file
+}
+
+main "${@}"
