@@ -84,7 +84,7 @@ delete_stats_dir () {
 send_stats () {
 {% if stats.enabled %}
     local remote_stats_path="{{ stats.ssh_remote_dir }}/${USER}_NAME.func_stats_${machine}.${yesterday}"
-    scp -i ~/.ssh/{{ stats.ssh_local_key_path }} "${function_stats_file}" "{{ stats.ssh_remote_user }}@${remote_stats_path}"
+    scp -i ~/.ssh/{{ stats.ssh_local_key_path }} "${function_stats_file}" "{{ stats.ssh_remote_user }}@{{ stats.ssh_remote_host }}:${remote_stats_path}"
 {% else %}
     echo "Stats disabled; no file(s) will be copied to remote"
 {% endif %}
