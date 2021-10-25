@@ -4,8 +4,7 @@
 
 # -- Internal variables -------------------------------------------------------
 
-function_start=1
-function_end=29
+functions=(1 2 3 4 5 6 7 8 9 10 11 12 13 16 17 18 18s 20 23 24 26 27 28 29)
 parent_dir="$(cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd)"
 
 # -- General ------------------------------------------------------------------
@@ -26,7 +25,7 @@ main () {
 
     cat "${parent_dir}/fnshdr" >> "${output_file}"
 
-    for function_number in $(seq "${function_start}" "${function_end}"); do
+    for function_number in "${functions[@]}"; do
         process_days_functions "${function_number}" "${input_file}" "${output_file}"
     done
 }
