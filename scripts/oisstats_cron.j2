@@ -53,7 +53,13 @@ prepare_request_file () {
 
 create_days_file () {
     days_file="${stats_dir}/days.${reqdate}"
-    awk -f "${parent_dir}/stday" <(zcat "${reqfile}" | sed s/6100=18s/6100=18/g) > "${days_file}"
+
+    local cat_cmd=cat
+    if [[ "${name}" =~ .*.gz$ ]]; then
+        cat_cmd=zcat
+    fi
+
+    awk -f "${parent_dir}/stday" <("${cat_cmd}" "${reqfile}" | sed s/6100=18s/6100=18/g) > "${days_file}"
 }
 
 generate_response_times () {
