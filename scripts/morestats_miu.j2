@@ -1,0 +1,105 @@
+#!/bin/bash
+
+# Generate function call statistics and copy to remote host for further
+# processing.
+
+# -- Internal variables -------------------------------------------------------
+
+script_name=$(basename "$0")
+parent_dir="$(cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd)"
+
+today=$(date +%d%m%y)
+yesterday=$(date --date=yesterday +%d%m%y)
+reqdate=${1-$yesterday}
+
+log_dir="{{ tuxedo_logs_path }}/${USER}"
+log_archive_dir="${log_dir}/old"
+
+machine=$(uname -n)
+
+# -- General ------------------------------------------------------------------
+
+check_user () {
+    if [[ "${USER}" == "root" ]]; then
+        echo "${script_name}: This script should be executed as a Tuxedo service user not root"
+        exit 1
+    fi
+}
+
+create_stats_dir () {
+    stats_dir=$(mktemp -d /tmp/oisstats.XXXXXXX)
+    if [[ $? -ne 0 ]]; then
+        echo "Unable to create oisstats temporary directory" >&2
+        exit 1
+    fi
+}
+
+prepare_request_file () {
+    if [[ "${reqdate}" == "${today}" ]]; then
+        if [[ ! -s "${log_dir}/txlog.${today}" ]]; then
+            echo "${log_dir}/txlog.${today} is empty"
+            exit 1
+        fi
+
+        cp "${log_dir}/txlog.${today}" "${stats_dir}"
+        reqfile="${stats_dir}/txlog.${today}"
+    else
+        # We assume that past logs have been rotated and that only a single compressed
+        # archive encapsulates the log for a given date in its entirety (i.e. .1.gz)
+        reqfile="${log_archive_dir}/txlog.${reqdate}.1.gz"
+    fi
+
+    if [[ ! -f "${reqfile}" ]]; then
+        echo "txlog.$reqdate does not exist"
+        exit 1
+    fi
+
+    echo "*** Reqdate is ${reqdate}"
+    echo "*** Reqfile is ${reqfile}"
+}
+
+create_days_file () {
+    days_file="${stats_dir}/days.${reqdate}"
+
+    local cat_cmd=cat
+    if [[ "${name}" =~ .*.gz$ ]]; then
+        cat_cmd=zcat
+    fi
+
+    awk -f "${parent_dir}/stday" <("${cat_cmd}" "${reqfile}" | sed s/6100=18s/6100=18/g) > "${days_file}"
+}
+
+generate_function_stats () {
+    function_stats_file="${stats_dir}/resfns.${reqdate}"
+    "${parent_dir}/dofns_miu" "${days_file}" "${function_stats_file}"
+    echo >> "${function_stats_file}"
+}
+
+delete_stats_dir () {
+    rm -rf "${stats_dir}"
+}
+
+# -- Alerting -----------------------------------------------------------------
+
+send_stats () {
+{% if stats.enabled %}
+    local remote_stats_path="{{ stats.ssh_remote_dir }}/${USER}_NAME.func_stats_${machine}.${yesterday}"
+    scp -i ~/.ssh/{{ stats.ssh_local_key_path }} "${function_stats_file}" "{{ stats.ssh_remote_user }}@${remote_stats_path}"
+{% else %}
+    echo "Stats disabled; no file(s) will be copied to remote"
+{% endif %}
+}
+
+# -- Entrypoint ---------------------------------------------------------------
+
+main () {
+    check_user
+    create_stats_dir
+    prepare_request_file
+    create_days_file
+    generate_function_stats
+    send_stats
+    delete_stats_dir
+}
+
+main "${@}"

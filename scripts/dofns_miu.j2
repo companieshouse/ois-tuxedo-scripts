@@ -1,0 +1,33 @@
+#!/bin/bash
+
+# Execute stfns2_miu for each business function
+
+# -- Internal variables -------------------------------------------------------
+
+functions=(1 2 3 4 5 6 7 8 9 10 11 12 13 17 18 20 23 24 25 27 28 30 31)
+parent_dir="$(cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd)"
+
+# -- General ------------------------------------------------------------------
+
+process_days_functions () {
+    local function_number="$1"
+    local input_file="$2"
+    local output_file="$3"
+
+    awk -f "${parent_dir}/stfns2_miu" fno="${function_number}" "${input_file}" >> "${output_file}"
+}
+
+# -- Entrypoint ---------------------------------------------------------------
+
+main () {
+    local input_file="$1"
+    local output_file="$2"
+
+    cat "${parent_dir}/fnshdr" >> "${output_file}"
+
+    for function_number in "${functions[@]}"; do
+        process_days_functions "${function_number}" "${input_file}" "${output_file}"
+    done
+}
+
+main "${@}"
