@@ -1,0 +1,68 @@
+#!/bin/bash
+
+# Check last N number of lines of user log for E_1102 errors and generate email
+# alerts if threshold exceeded.
+
+# -- Internal variables -------------------------------------------------------
+
+script_name=$(basename "$0")
+
+user_log="{{ tuxedo_logs_path }}/${USER}/ULOG.$(date +%m%d%y)"
+user_log_lines="20"
+
+error_threshold="5"
+error_threshold_exceeded="false"
+
+# -- General ------------------------------------------------------------------
+
+check_user () {
+    if [[ "${USER}" == "root" ]]; then
+        echo "${script_name}: This script should be executed as a Tuxedo service user not root"
+        exit 1
+    fi
+}
+
+create_mail_file () {
+    mail_file=$(mktemp -t fail_check.XXXXXXX)
+    if [[ $? -ne 0 ]]; then
+        echo "Unable to create temporary mail file" >&2
+        exit 1
+    fi
+}
+
+check_errors () {
+    if [[ $(tail -${user_log_lines} "${user_log}" | grep "E_1102" | wc -l) -gt ${error_threshold} ]]; then
+        echo -e "Ulog showing E_1102 errors.\n" >> "${mail_file}"
+        error_threshold_exceeded="true"
+    fi
+}
+
+delete_mail_file () {
+    rm -f "${mail_file}"
+}
+
+# -- Alerting -----------------------------------------------------------------
+
+send_alert () {
+{% if alerts.enabled %}
+    mailx -r $(hostname) -s "WARNING Image ordering failure!!! - ULOG PROBLEM - $(date)"  {% for recipient in alerts.fail_check %}{{ recipient }} {% endfor %}< "${mail_file}"
+{% else %}
+    echo "Alerts disabled; no mail message(s) will be generated"
+{% endif %}
+}
+
+# -- Entrypoint ---------------------------------------------------------------
+
+main () {
+    check_user
+    create_mail_file
+    check_errors
+
+    if [[ "${error_threshold_exceeded}" == "true" ]]; then
+        send_alert
+    fi
+
+    delete_mail_file
+}
+
+main "${@}"

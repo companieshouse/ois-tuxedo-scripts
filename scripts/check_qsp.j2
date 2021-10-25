@@ -1,0 +1,72 @@
+#!/bin/bash
+
+# Check QSP queue and generate email alerts if the number of messages exceeds a
+# given threshold.
+
+# -- Internal variables -------------------------------------------------------
+
+script_name=$(basename "$0")
+parent_dir="$(cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd)"
+
+message_threshold="100"
+meessage_threshold_exceeded="false"
+
+# -- General ------------------------------------------------------------------
+
+check_user () {
+    if [[ "${USER}" == "root" ]]; then
+        echo "${script_name}: This script should be executed as a Tuxedo service user not root"
+        exit 1
+    fi
+}
+
+create_mail_file () {
+    mail_file=$(mktemp -t check_qsp.XXXXXXX)
+    if [[ $? -ne 0 ]]; then
+        echo "Unable to create temporary mail file" >&2
+        exit 1
+    fi
+}
+
+check_queue () {
+    local queue_name="$1"
+    local queue_message_threshold="$2"
+
+    local queue_message_count=$(grep "${queue_name}:" <(${parent_dir}/tux_qinfo) | cut -d" " -f3)
+
+    if [[ "${queue_message_count}" -gt "${queue_message_threshold}" ]]; then
+        meessage_threshold_exceeded="true"
+        echo "There are currently ${queue_message_count} on the QSP_Ord queue" >> "${mail_file}"
+        echo -e "$(date)\n" >> "${mail_file}"
+    fi
+}
+
+delete_mail_file () {
+    rm -f "${mail_file}"
+}
+
+# -- Alerting -----------------------------------------------------------------
+
+send_alert () {
+{% if alerts.enabled %}
+    mailx -r $(hostname) -s "WARNING - qspqueue" {% for recipient in alerts.qsp_messages %}{{ recipient }} {% endfor %}< "${mail_file}"
+{% else %}
+    echo "Alerts disabled; no mail message(s) will be generated"
+{% endif %}
+}
+
+# -- Entrypoint ---------------------------------------------------------------
+
+main () {
+    check_user
+    create_mail_file
+    check_queue QSP_Ord "${message_threshold}"
+
+    if [[ "${meessage_threshold_exceeded}" == "true" ]]; then
+        send_alert
+    fi
+
+    delete_mail_file
+}
+
+main "${@}"
