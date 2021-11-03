@@ -23,8 +23,6 @@ main () {
     local input_file="$1"
     local output_file="$2"
 
-    cat "${parent_dir}/fnshdr" >> "${output_file}"
-
     for function_number in "${functions[@]}"; do
         process_days_functions "${function_number}" "${input_file}" "${output_file}"
     done
