@@ -17,14 +17,23 @@ check_user () {
     fi
 }
 
+create_temp_log () {
+    temp_log=$(mktemp -t ois_stop.XXXXXXX)
+    if [[ $? -ne 0 ]]; then
+        echo "Unable to create temporary log file" >&2
+        exit 1
+    fi
+}
+
 stop_tux_services () {
     echo "${now} Shutting down Tuxedo servers for user '${USER}'" | tee -a "${shutdown_log}"
 
     mncq_stop
-    tmshutdown -y -w1 2>> "${shutdown_log}"
+    tmshutdown -y -w1 2>> "${temp_log}"
+    cat "${temp_log}" >> "${shutdown_log}"
 
-    local generic_error=$(grep "ERROR" "${shutdown_log}")
-    local proc_count=$(grep "processes stopped" "${shutdown_log}" | cut -d " " -f1)
+    local generic_error=$(grep "ERROR" "${temp_log}")
+    local proc_count=$(grep "processes stopped" "${temp_log}" | cut -d " " -f1)
 
     if [[ -n "${generic_error}" ]]; then
         echo -e "${now} Tuxedo failed to shutdown: service(s) may already be closed" | tee -a "${shutdown_log}"
@@ -36,11 +45,17 @@ stop_tux_services () {
     fi
 }
 
+delete_temp_log () {
+    rm -f "${temp_log}"
+}
+
 # -- Entrypoint ---------------------------------------------------------------
 
 main () {
     check_user
+    create_temp_log
     stop_tux_services
+    delete_temp_log
 }
 
 main "${@}"
