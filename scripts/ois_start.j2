@@ -1,0 +1,72 @@
+#!/bin/bash
+
+# Start Tuxedo services for current user.
+
+# -- Internal variables -------------------------------------------------------
+
+service=$(tr [:lower:] [:upper:] <<< ${USER})
+now=$(date +%r)
+boot_log={{ tuxedo_logs_path }}/oisboot.log
+
+# -- General ------------------------------------------------------------------
+
+check_user () {
+    if [[ "${USER}" == "root" ]]; then
+        echo "${script_name}: This script should be executed as a Tuxedo service user not root"
+        exit 1
+    fi
+}
+
+create_temp_log () {
+    temp_log=$(mktemp -t ois_start.XXXXXXX)
+    if [[ $? -ne 0 ]]; then
+        echo "Unable to create temporary log file" >&2
+        exit 1
+    fi
+}
+
+start_tux_services () {
+    echo "${now} Booting Tuxedo servers for user '${USER}'" | tee -a "${boot_log}"
+
+    tmboot -y 2>> "${temp_log}"
+    cat "${temp_log}" >> "${boot_log}"
+
+    local generic_error=$(grep "ERROR" "${temp_log}")
+    local missing_executable_errors=$(grep "Cannot exec, executable file not found" "${temp_log}")
+    local invalid_relase_errors=$(grep "Invalid release" "${temp_log}")
+    local duplicate_server_errors=$(grep "Duplicate server" "${temp_log}")
+    local proc_count=$(grep "processes started" "${temp_log}" | cut -d " " -f1)
+
+    if [[ -n "${duplicate_server_errors}" ]]; then
+        echo "${now} Tuxedo failed to boot: service(s) may already be running" | tee -a "${boot_log}"
+        echo "${now} Consult the boot log file: '${boot_log}'"
+    elif [[ -n "${missing_executable_errors}" ]]; then
+        echo "${now} Tuxedo failed to boot: executable(s) may be missing or have incorrect permissions" | tee -a "${boot_log}"
+        echo "${now} Consult the boot log file: '${boot_log}'"
+    elif [[ -n "${invalid_relase_errors}" ]]; then
+        echo "${now} Tuxedo failed to boot: possibe CABS problem" | tee -a "${boot_log}"
+        echo "${now} Consult the boot log file: '${boot_log}'"
+    elif [[ -n "${generic_error}" ]]; then
+        echo "${now} Tuxedo failed to boot: unknown error" | tee -a "${boot_log}"
+        echo "${now} Consult the boot log file: '${boot_log}'"
+    else
+        echo "${now} ${service} Tuxedo services booted successfully" | tee -a "${boot_log}"
+        echo "${now} ${proc_count} processes started" | tee -a "${boot_log}"
+        mncq_start
+    fi
+}
+
+delete_temp_log () {
+    rm -f "${temp_log}"
+}
+
+# -- Entrypoint ---------------------------------------------------------------
+
+main () {
+    check_user
+    create_temp_log
+    start_tux_services
+    delete_temp_log
+}
+
+main "${@}"

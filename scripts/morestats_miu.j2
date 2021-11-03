@@ -15,8 +15,6 @@ reqdate=${1-$yesterday}
 log_dir="{{ tuxedo_logs_path }}/${USER}"
 log_archive_dir="${log_dir}/old"
 
-machine=$(uname -n)
-
 # -- General ------------------------------------------------------------------
 
 check_user () {
@@ -83,7 +81,8 @@ delete_stats_dir () {
 
 send_stats () {
 {% if stats.enabled %}
-    local remote_stats_path="{{ stats.ssh_remote_dir }}/${USER}.func_stats_${machine}.${reqdate}"
+    local short_machine_name=$(uname -n | sed -E 's/ois-tuxedo-(.*)-(.*)/ois-\1-0\2/')
+    local remote_stats_path="{{ stats.ssh_remote_dir }}/${USER}.func_stats_${short_machine_name}.${reqdate}"
     scp -i {{ stats.ssh_local_key_path }} "${function_stats_file}" "{{ stats.ssh_remote_user }}@{{ stats.ssh_remote_host }}:${remote_stats_path}"
 {% else %}
     echo "Stats disabled; no file(s) will be copied to remote"
