@@ -6,7 +6,7 @@
 
 service=$(tr [:lower:] [:upper:] <<< ${USER})
 now=$(date +%r)
-boot_log={{ tuxedo_logs_path }}/oisboot.log
+boot_log={{ tuxedo_logs_path }}/${USER}/oisboot.log
 
 # -- General ------------------------------------------------------------------
 

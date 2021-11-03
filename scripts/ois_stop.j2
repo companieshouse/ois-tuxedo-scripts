@@ -6,7 +6,7 @@
 
 service=$(tr [:lower:] [:upper:] <<< ${USER})
 now=$(date +%r)
-shutdown_log={{ tuxedo_logs_path }}/oisclose.log
+shutdown_log={{ tuxedo_logs_path }}/${USER}/oisclose.log
 
 # -- General ------------------------------------------------------------------
 
