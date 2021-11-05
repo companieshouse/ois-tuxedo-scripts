@@ -60,7 +60,7 @@ create_days_file () {
     days_file="${stats_dir}/days.${reqdate}"
 
     local cat_cmd=cat
-    if [[ "${name}" =~ .*.gz$ ]]; then
+    if [[ "${reqfile}" =~ .*.gz$ ]]; then
         cat_cmd=zcat
     fi
 
