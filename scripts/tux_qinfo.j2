@@ -5,11 +5,17 @@
 
 # -- Internal variables -------------------------------------------------------
 
-script_name=$(basename "$0")
-
-admin_cmd="
+single_queue_space_cmd="
 echo
 qopen QSPACE
+qinfo
+quit"
+
+multiple_queue_space_cmd="
+echo
+qopen QSPACE
+qinfo
+qopen QSPACE2
 qinfo
 quit"
 
@@ -23,7 +29,13 @@ check_user () {
 }
 
 read_queue_info () {
-    awk 'BEGIN {printf("\nXML - Tuxedo Queue Info...\n--------------------------")} /QSPACE/ {printf("\n%s:\n",$3)}; /Queue/ {print $0}' < <(qmadmin 2>/dev/null <<<"${admin_cmd}")
+    if [[ "${USER}" == "publ" || "${USER}" == "ois" ]]; then
+        admin_cmd="${multiple_queue_space_cmd}"
+    else
+        admin_cmd="${single_queue_space_cmd}"
+    fi
+
+    awk 'BEGIN {printf("\nTuxedo Queue Info...\n--------------------------")} /QSPACE/ {printf("\n%s:\n",$3)}; /Queue/ {print $0}' < <(qmadmin 2>/dev/null <<<"$admin_cmd")
 }
 
 # -- Entrypoint ---------------------------------------------------------------
