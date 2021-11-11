@@ -79,7 +79,7 @@ main () {
 
     check_error_queue ERRORQ "${error_threshold}"
 
-    if [[ "${USER}" == "publ" ]]; then
+    if [[ "${USER}" == "publ" || "${USER}" == "ois" ]]; then
         check_error_queue ERRORQ2 "${error_threshold}"
     fi
 
@@ -89,7 +89,7 @@ main () {
 
     delete_error_messages QSPACE ERRORQ
 
-    if [[ "${USER}" == "publ" ]]; then
+    if [[ "${USER}" == "publ" || "${USER}" == "ois" ]]; then
         delete_error_messages QSPACE2 ERRORQ2
     fi
 
