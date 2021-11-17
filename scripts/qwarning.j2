@@ -46,7 +46,7 @@ delete_mail_file () {
 
 send_alert () {
 {% if alerts.enabled %}
-    mailx -r $(hostname) -s "WARNING - Queue Problem"  {% for recipient in alerts_config.watermark_files %}{{ recipient }} {% endfor %}< "${mail_file}"
+    mailx -r "${USER}@$(hostname)" -s "WARNING - Queue Problem"  {% for recipient in alerts_config.watermark_files %}{{ recipient }} {% endfor %}< "${mail_file}"
 {% else %}
     echo "Alerts disabled; no mail message(s) will be generated"
 {% endif %}
