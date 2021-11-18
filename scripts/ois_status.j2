@@ -248,8 +248,11 @@ main () {
     check_domain_servers
     check_aisord_servers
     check_queue_servers
-    check_sqsp_servers
     check_mncq_servers
+
+    if [[ "${USER}" != "ceu" ]]; then
+        check_sqsp_servers
+    fi
 
     if [[ "${USER}" == "xml" ]]; then
         check_transaction_logs 5    425    # Transactions between 00:05 and 07:05
