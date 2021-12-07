@@ -248,9 +248,9 @@ main () {
     check_domain_servers
     check_aisord_servers
     check_queue_servers
-    check_mncq_servers
 
     if [[ "${USER}" != "ceu" ]]; then
+        check_mncq_servers
         check_sqsp_servers
     fi
 

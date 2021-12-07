@@ -52,7 +52,10 @@ start_tux_services () {
     else
         echo "${now} ${service} Tuxedo services booted successfully" | tee -a "${boot_log}"
         echo "${now} ${proc_count} processes started" | tee -a "${boot_log}"
-        mncq_start
+
+        if [[ "${USER}" != "ceu" ]]; then
+            mncq_start
+        fi
     fi
 }
 
