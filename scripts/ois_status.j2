@@ -249,7 +249,7 @@ main () {
     check_aisord_servers
     check_queue_servers
 
-    if [[ "${USER}" != "ceu" ]]; then
+    if [[ "${USER}" != "ceu" && "${USER}" != "wck" ]]; then
         check_mncq_servers
         check_sqsp_servers
     fi
