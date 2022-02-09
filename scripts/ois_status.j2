@@ -19,8 +19,8 @@ ulog={{ tuxedo_logs_path }}/${USER}/ULOG.$(date +%m%d%y)
 unit_sleep_interval=20
 
 # Minimum server counts for alerting
-orders_min_count=4
-orders_min_boot_count=6
+orders_min_boot_count={{ orders_min_boot_count }}
+orders_min_count=$(( ${orders_min_boot_count} - 2 ))
 bbl_min_count=1
 dom_min_count=1
 aisord_min_count=1
@@ -105,7 +105,7 @@ check_orders_servers () {
     fi
 
     if [[ "${orders_count}" -lt "${orders_min_count}" ]]; then
-        append_txlog_mail_file "${today}, ${orders_count} of 8 ORDERS servers running"
+        append_txlog_mail_file "${today}, ${orders_count} of ${orders_min_count} ORDERS servers running"
         record_txlog_unit_fail "ORDERS SERVERS"
     fi
 }
