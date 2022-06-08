@@ -20,7 +20,7 @@ check_user () {
 }
 
 check_daemon () {
-    if [[ -n "$(pgrep -u ${USER} mncq)" ]]; then
+    if [[ -n "$(pgrep -u ${USER} -x mncq)" ]]; then
         echo "${script_name}: mncq daemon is already running" >&2
         exit 1
     fi

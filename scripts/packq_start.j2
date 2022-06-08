@@ -13,7 +13,7 @@ default_log_level="3"
 # -- General ------------------------------------------------------------------
 
 check_daemon () {
-    if [[ -n "$(pgrep -u ${USER} packq)" ]]; then
+    if [[ -n "$(pgrep -u ${USER} -x packq)" ]]; then
         echo "${script_name}: packq daemon is already running" >&2
         exit 1
     fi
