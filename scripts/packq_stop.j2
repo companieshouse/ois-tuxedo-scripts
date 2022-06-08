@@ -29,9 +29,9 @@ stop_daemon () {
         if [[ "${pid_wait_attempts}" -gt "${max_pid_wait_seconds}" ]]; then
             echo "${script_name}: could not stop packq daemon"
             exit 1
-        else
-            ((pid_wait_attempts++))
         fi
+
+        ((pid_wait_attempts++))
         sleep 1
     done
 
