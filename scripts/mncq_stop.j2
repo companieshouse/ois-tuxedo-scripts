@@ -18,14 +18,14 @@ check_user () {
 }
 
 check_daemon () {
-    if [[ -z "$(pgrep -u ${USER} mncq)" ]]; then
+    if [[ -z "$(pgrep -u ${USER} -x mncq)" ]]; then
         echo "${script_name}: mncq daemon is not running" >&2
         exit 1
     fi
 }
 
 stop_daemon () {
-    local daemon_pid="$(pgrep -u ${USER} mncq)"
+    local daemon_pid="$(pgrep -u ${USER} -x mncq)"
 
     echo "${script_name}: stopping mncq daemon"
     kill -s SIGTERM "${daemon_pid}"
