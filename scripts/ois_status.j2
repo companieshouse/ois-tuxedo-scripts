@@ -225,6 +225,15 @@ check_chips_errors () {
     fi
 }
 
+check_domain_state () {
+    local domain_state=$(tail -10 "${ulog}" | grep "WARN: Remote domain" | wc -l)
+
+    if [[ "${domain_state}" -gt 1 ]]; then
+        append_txlog_mail_file "ULOG displaying connectivity errors - please run tmshutdown -g DOMAIN_GROUP;tmboot -g DOMAIN_GROUP."
+        record_txlog_unit_fail "Domain connectivity errors"
+    fi
+}
+
 # -- Alerting -----------------------------------------------------------------
 
 send_alert () {
@@ -248,6 +257,7 @@ main () {
     check_domain_servers
     check_aisord_servers
     check_queue_servers
+    check_domain_state
 
     if [[ "${USER}" != "ceu" && "${USER}" != "wck" ]]; then
         check_mncq_servers
