@@ -15,6 +15,11 @@ reqdate=${1-$yesterday}
 log_dir="{{ tuxedo_logs_path }}/${USER}"
 log_archive_dir="${log_dir}/old"
 
+# stats_dir should be the path to a directory on a shared NFS mount; output files
+# are written to this directory, and fil-tuxedo-stack servers read and process
+# files from the same mount in the ois_stats_update script
+stats_dir="/scanning/ois-stats"
+
 # -- General ------------------------------------------------------------------
 
 check_user () {
@@ -24,8 +29,8 @@ check_user () {
     fi
 }
 
-create_stats_dir () {
-    stats_dir=$(mktemp -d /tmp/oisstats.XXXXXXX)
+create_temp_dir () {
+    temp_dir=$(mktemp -d /tmp/${script_name}.XXXXXXX)
     if [[ $? -ne 0 ]]; then
         echo "Unable to create oisstats temporary directory" >&2
         exit 1
@@ -39,8 +44,8 @@ prepare_request_file () {
             exit 1
         fi
 
-        cp "${log_dir}/txlog.${today}" "${stats_dir}"
-        reqfile="${stats_dir}/txlog.${today}"
+        cp "${log_dir}/txlog.${today}" "${temp_dir}"
+        reqfile="${temp_dir}/txlog.${today}"
     else
         # We assume that past logs have been rotated and that only a single compressed
         # archive encapsulates the log for a given date in its entirety (i.e. .1.gz)
@@ -57,7 +62,7 @@ prepare_request_file () {
 }
 
 create_days_file () {
-    days_file="${stats_dir}/days.${reqdate}"
+    days_file="${temp_dir}/days.${reqdate}"
 
     local cat_cmd=cat
     if [[ "${reqfile}" =~ .*.gz$ ]]; then
@@ -68,37 +73,31 @@ create_days_file () {
 }
 
 generate_function_stats () {
-    function_stats_file="${stats_dir}/resfns.${reqdate}"
+    function_stats_file="${temp_dir}/resfns.${reqdate}"
     "${parent_dir}/dofns_miu" "${days_file}" "${function_stats_file}"
     echo >> "${function_stats_file}"
 }
 
-delete_stats_dir () {
-    rm -rf "${stats_dir}"
+delete_temp_dir () {
+    rm -rf "${temp_dir}"
 }
 
-# -- Alerting -----------------------------------------------------------------
-
-send_stats () {
-{% if stats.enabled %}
-    local short_machine_name=$(uname -n | sed -E 's/ois-tuxedo-(.*)-(.*)/ois-\1-0\2/')
-    local remote_stats_path="{{ stats_config.ssh_remote_dir }}/${USER}.func_stats_${short_machine_name}.${reqdate}"
-    scp -i {{ stats_config.ssh_local_key_path }} "${function_stats_file}" "{{ stats_config.ssh_remote_user }}@{{ stats_config.ssh_remote_host }}:${remote_stats_path}"
-{% else %}
-    echo "Stats disabled; no file(s) will be copied to remote"
-{% endif %}
+share_stats_file () {
+    local machine_name=$(uname -n | sed -E 's/ois-tuxedo-(.*)-(.*)/ois-\1-0\2/')
+    local stats_file="${USER}.func_stats_${machine_name}.${reqdate}"
+    cp -f "${function_stats_file}" "${stats_dir}/${stats_file}"
 }
 
 # -- Entrypoint ---------------------------------------------------------------
 
 main () {
     check_user
-    create_stats_dir
+    create_temp_dir
     prepare_request_file
     create_days_file
     generate_function_stats
-    send_stats
-    delete_stats_dir
+    share_stats_file
+    delete_temp_dir
 }
 
 main "${@}"
