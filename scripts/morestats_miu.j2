@@ -22,18 +22,11 @@ stats_dir="/scanning/ois-stats"
 
 # -- General ------------------------------------------------------------------
 
-create_dir () {
-    local dir_path="${1}"
-    local permissions="${2}"
-
-    if [[ ! -d "${dir_path}" ]]; then
-        info "Creating directory '${dir_path}'"
-        mkdir -p "${dir_path}"
-        exit_on_error "$?" "Unable to create directory '${dir_path}'"
+check_stats_dir () {
+    if [[ ! -d "${stats_dir}" ]]; then
+        echo "Stats dir does not exist: '${stats_dir}'" >&2
+        exit 1
     fi
-
-    chmod "${permissions}" "${dir_path}"
-    exit_on_error "$?" "Unable to set permissions on directory '${dir_path}'"
 }
 
 check_user () {
@@ -115,8 +108,8 @@ exit_on_error () {
 
 main () {
     check_user
+    check_stats_dir
     create_temp_dir
-    create_dir "${stats_dir}" "777"
     prepare_request_file
     create_days_file
     generate_function_stats
