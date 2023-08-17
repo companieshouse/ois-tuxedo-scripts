@@ -44,7 +44,7 @@ delete_mail_file () {
 
 send_alert () {
 {% if alerts.enabled %}
-    mailx -r "${USER}@$(hostname)" -s "WARNING - Tpreturn Error." {% for recipient in alerts_config.send_blocked %}{{ recipient }} {% endfor %}< "${mail_file}"
+    mailx -s "${USER}@$(hostname) - WARNING - Tpreturn Error." {% for recipient in alerts_config.send_blocked %}{{ recipient }} {% endfor %}< "${mail_file}"
 {% else %}
     echo "Alerts disabled; no mail message(s) will be generated"
 {% endif %}
