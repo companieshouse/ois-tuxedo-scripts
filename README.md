@@ -8,7 +8,7 @@ These scripts are deployed via CI/CD jobs that utilise an Ansible playbook. For 
 
 ## Branching Strategy
 
-This project uses a trunk-based branching strategy and changes merged to the `main` branch are incorporated into versioned artefacts via the [ois-tuxedo-scripts](https://github.com/companieshouse/ci-pipelines/blob/master/pipelines/platform/team-platform/ois-tuxedo-scripts) pipeline:
+This project uses a trunk-based branching strategy and changes merged to the `main` branch are incorporated into versioned artefacts via the [ois-tuxedo-scripts](https://github.com/companieshouse/ci-pipelines/blob/master/pipelines/ssplatform/team-infrastructure/ois-tuxedo-scripts) pipeline:
 
 ```mermaid
 %%{init: { 'logLevel': 'debug', 'theme': 'default' , 'themeVariables': {
